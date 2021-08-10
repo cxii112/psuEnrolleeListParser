@@ -16,28 +16,54 @@ public class Solution
         {
             System.out.println(str);
         }
-        final String LIST_URL = args[1];
-        final String SPEC_CODE = args[3] + 'b';
-        Document DOM = Jsoup.connect(LIST_URL).get();
+        String listUrl = args[0];
+//        if (listUrl.charAt(listUrl.length() - 1) != '/')
+//            listUrl += '/';
+//        listUrl += "#380402-07-12";
+        String specCode = args[1] + 'b';
+        Document DOM = Jsoup.connect(listUrl).get();
         Elements articles = DOM.getElementsByTag("article");
-        articles.removeIf(Solution::checkIfInternalStudyBachelor);
+        articles.removeIf(article -> !isInternalStudyBachelor(article));
         System.out.printf("Bachelor articles: %d\n", articles.size());
+        fillEnrolleesList(articles);
     }
 
-    private static boolean checkIfInternalStudyBachelor(Element article)
+    private static boolean isInternalStudyBachelor(Element article)
     {
-        Element header = article.getElementsByTag("h2").first();
-        if (header == null) return false;
-        if (header.getElementsByTag("span").isEmpty()) return false;
-        if (header.getElementsByTag("span").first() == null) return false;
-        String specName = header.getElementsByTag("span").first().ownText();
-        if (specName == null || specName.equals("")) return false;
-        if (specName.contains("заочная")) return false;
-        return specName.contains("бакалавриат");
+        try
+        {
+            String specName = article.getElementsByTag("span").first()
+                    .ownText().toLowerCase();
+            if (specName.contains("заочная")) return false;
+            if (specName.contains("бакалавриат")) return true;
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            return false;
+        }
+        return false;
     }
 
     private static void fillEnrolleesList(Elements articles)
     {
+        articles.forEach(article -> {
+            Elements articleTables = article.getElementsByTag("table");
+            String specCode = article.getElementsByTag("a").first()
+                    .attr("name");
+            addEnrolleesFromTable(articleTables.first(), specCode + 'b');
+            addEnrolleesFromTable(articleTables.last(), specCode + 'p');
+        });
+    }
 
+    private static void addEnrolleesFromTable(Element table, String specKey)
+    {
+        Elements rawRows = table.getElementsByTag("tr");
+        rawRows.removeIf(row -> {
+            if (row.attr("bgcolor").equals("#EEEEEE")) return true;
+            var col = row.getElementsByTag("td").first();
+            if (col.attr("colspan").equals("8")) return true;
+            return false;
+        });
     }
 }
