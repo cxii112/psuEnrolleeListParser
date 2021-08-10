@@ -8,6 +8,8 @@ import java.util.ArrayList;
 
 public class Solution
 {
+    private static ArrayList<Enrollee> enrollees = new ArrayList<>();
+
     public static void main(String[] args) throws IOException
     {
         for (String str : args)
@@ -34,16 +36,8 @@ public class Solution
         return specName.contains("бакалавриат");
     }
 
-    private static ArrayList<Enrollee> generateList(Element table)
+    private static void fillEnrolleesList(Elements articles)
     {
-        ArrayList<Enrollee> result = new ArrayList<>();
-        var rows = table.getElementsByTag("tr");
-        rows.removeIf(row -> {
-            if (row.equals(rows.first())) return false;
-            var cols = row.getElementsByTag("td");
-            if (cols.first().attr("colspan").equals("8")) return false;
-            return true;
-        });
-        return result;
+
     }
 }
