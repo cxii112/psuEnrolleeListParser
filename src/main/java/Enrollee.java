@@ -50,6 +50,11 @@ public class Enrollee
     {
         return specDataMap.get(specKey).index;
     }
+
+    public int compare(Enrollee other, String specKey)
+    {
+        return this.indexAt(specKey) - other.indexAt(specKey);
+    }
 }
 
 class EnrolleeSpecData

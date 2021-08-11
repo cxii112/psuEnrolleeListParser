@@ -8,12 +8,12 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class Solution
 {
     private static Map<String, Enrollee> enrollees = new HashMap<>();
+    private static int agreementsCount = 0;
 
     public static void main(String[] args) throws IOException
     {
@@ -65,7 +65,7 @@ public class Solution
             System.out.println(e.getMessage());
             e.printStackTrace();
         }
-        writer.write("# Summary\n\n");
+        writer.write("# Итог\n\n");
 
         Document DOM = Jsoup.connect(listUrl.toString())
                 .maxBodySize(0)
@@ -74,21 +74,42 @@ public class Solution
         Elements articles = DOM.getElementsByTag("article");
         articles.removeIf(article -> !isInternalStudyBachelor(article));
 
-        System.out.printf("Bachelor articles(%s): %d",
-                          specCode,
+        System.out.printf("Bachelor articles: %d",
                           articles.size());
-        writeToMarkDown(String.format("Bachelor articles(%s): %d\n",
-                                      specCode,
+        writeToMarkDown(String.format("Найдено направлений бакалавриата: **%d**\n",
                                       articles.size()),
                         writer);
 
         fillEnrolleesList(articles);
         var resultingTable = extractSpecTable(specCode);
+        writeToMarkDown(String.format("Согласий на *%s*: **%d**\n",
+                                      specCode,
+                                      agreementsCount),
+                        writer);
+        writeTable(specCode, writer, resultingTable);
+        System.out.println("Done");
+        if (writer != null)
+        {
+            writer.close();
+        }
+    }
+
+    private static void writeTable(String specCode,
+                                   BufferedWriter writer,
+                                   Map<String, Enrollee> table)
+    {
+        ArrayList<Enrollee> enrolleesArray = new ArrayList<>(table.values());
         writeToMarkDown("| # | id | Согласие | Баллы |\n", writer);
         writeToMarkDown("|:---|---|:---:|---:|\n", writer);
-        for (var enrolleeData : resultingTable.entrySet())
-        {
-            Enrollee enrollee = enrolleeData.getValue();
+        Collections.sort(enrolleesArray,
+                         new Comparator<Enrollee>()
+                         {
+                             public int compare(Enrollee o1, Enrollee o2)
+                             {
+                                 return o1.compare(o2, specCode);
+                             }
+                         });
+        enrolleesArray.forEach(enrollee -> {
             int index = enrollee.indexAt(specCode);
             String id = enrollee.id;
             boolean hasAgreement = enrollee.hasAgreementTo() != null &&
@@ -97,15 +118,10 @@ public class Solution
             String row = String.format("| %d | %s | %s | %d |\n",
                                        index,
                                        id,
-                                       hasAgreement ? "+" : "",
+                                       hasAgreement ? "**+**" : "",
                                        points);
             writeToMarkDown(row, writer);
-        }
-        System.out.println("Done");
-        if (writer != null)
-        {
-            writer.close();
-        }
+        });
     }
 
     private static void writeToMarkDown(String message, BufferedWriter writer)
@@ -208,7 +224,11 @@ public class Solution
         }
         result.entrySet().removeIf(enrollee -> {
             if (enrollee.getValue().hasAgreementTo() == null) return false;
-            if (enrollee.getValue().hasAgreementTo().equals(specKey)) return false;
+            if (enrollee.getValue().hasAgreementTo().equals(specKey))
+            {
+                agreementsCount++;
+                return false;
+            }
             return true;
         });
         return result;
