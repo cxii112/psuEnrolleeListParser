@@ -51,7 +51,7 @@ class EnrolleeSpecData
 
     public EnrolleeSpecData(int index, boolean hasAgreement)
     {
-        this.index = 0;
+        this.index = index;
         this.hasAgreement = hasAgreement;
     }
 }
