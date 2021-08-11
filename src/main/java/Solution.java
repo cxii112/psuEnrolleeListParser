@@ -3,7 +3,11 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,21 +17,96 @@ public class Solution
 
     public static void main(String[] args) throws IOException
     {
-        for (String str : args)
+        URL listUrl = null;
+        String specCode = null;
+        boolean isWritingToMarkDown;
+        File file = null;
+        try
         {
-            System.out.println(str);
+            listUrl = new URL(args[0]);
         }
-        String listUrl = args[0];
-        String specCode = args[1] + 'b';
+        catch (Exception e)
+        {
+            System.out.println(e.getMessage());
+            System.out.println("Invalid URL");
+            System.exit(1);
+        }
+        try
+        {
+            specCode = args[1] + 'b';
+        }
+        catch (Exception e)
+        {
+            System.out.println("Invalid speciality code");
+            System.exit(1);
+        }
+        try
+        {
+            isWritingToMarkDown = args[2].equals("--md");
+        }
+        catch (Exception e)
+        {
+            isWritingToMarkDown = false;
+        }
+        if (isWritingToMarkDown)
+        {
+            try
+            {
+                file = new File(args[2]);
+                file.mkdirs();
+                file.createNewFile();
+            }
+            catch (Exception e)
+            {
+                System.out.println(e.getMessage());
+                System.out.println("Invalid path");
+            }
+        }
 
-        Document DOM = Jsoup.connect(listUrl)
+        Document DOM = Jsoup.connect(listUrl.toString())
                 .maxBodySize(0)
                 .get();
+
         Elements articles = DOM.getElementsByTag("article");
         articles.removeIf(article -> !isInternalStudyBachelor(article));
-        System.out.printf("Bachelor articles: %d\n", articles.size());
+        BufferedWriter writer = null;
+        if (isWritingToMarkDown && file != null)
+        {
+            writer = new BufferedWriter(new FileWriter(file.getPath()));
+            writer.write("# Summary\n");
+        }
+        logging(String.format("Bachelor articles: %d\n", articles.size()),
+                isWritingToMarkDown, writer);
         fillEnrolleesList(articles);
         var resultingTable = extractSpecTable(specCode);
+        if (writer != null)
+        {
+            writer.close();
+        }
+    }
+
+    private static void logging(String text,
+                                boolean isWritingToMarkDown,
+                                BufferedWriter writer)
+    {
+        if (!isWritingToMarkDown)
+        {
+            System.out.println(text);
+        }
+        else
+        {
+            try
+            {
+                writer.write(text);
+            }
+            catch (IOException e)
+            {
+                System.out.println("Error occured");
+                System.out.println(e.getMessage());
+                System.out.println();
+                System.out.println(text);
+            }
+        }
     }
 
     private static boolean isInternalStudyBachelor(Element article)
