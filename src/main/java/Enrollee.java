@@ -1,3 +1,5 @@
+import org.jetbrains.annotations.Nullable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +32,7 @@ public class Enrollee
         return specDataMap.containsKey(spec);
     }
 
+    @Nullable
     public String hasAgreementTo()
     {
         var keys = specDataMap.keySet();
