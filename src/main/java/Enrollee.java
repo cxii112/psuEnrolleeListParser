@@ -45,6 +45,11 @@ public class Enrollee
         }
         return null;
     }
+
+    public int indexAt(String specKey)
+    {
+        return specDataMap.get(specKey).index;
+    }
 }
 
 class EnrolleeSpecData
