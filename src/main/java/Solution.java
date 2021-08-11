@@ -19,7 +19,6 @@ public class Solution
     {
         URL listUrl = null;
         String specCode = null;
-        boolean isWritingToMarkDown;
         File file = null;
         try
         {
@@ -42,26 +41,31 @@ public class Solution
         }
         try
         {
-            isWritingToMarkDown = args[2].equals("--md");
+            String dirPath = args[2];
+            if (dirPath.charAt(dirPath.length() - 1) == '/')
+            {
+                dirPath += '/';
+            }
+            file = new File(dirPath + specCode + ".md");
+            file.getParentFile().mkdirs();
+            file.createNewFile();
         }
         catch (Exception e)
         {
-            isWritingToMarkDown = false;
+            System.out.println(e.getMessage());
+            System.out.println("Invalid path");
         }
-        if (isWritingToMarkDown)
+        BufferedWriter writer = null;
+        try
         {
-            try
-            {
-                file = new File(args[2]);
-                file.mkdirs();
-                file.createNewFile();
-            }
-            catch (Exception e)
-            {
-                System.out.println(e.getMessage());
-                System.out.println("Invalid path");
-            }
+            writer = new BufferedWriter(new FileWriter(file.getAbsolutePath()));
         }
+        catch (Exception e)
+        {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
+        writer.write("# Summary\n\n");
 
         Document DOM = Jsoup.connect(listUrl.toString())
                 .maxBodySize(0)
@@ -69,43 +73,50 @@ public class Solution
 
         Elements articles = DOM.getElementsByTag("article");
         articles.removeIf(article -> !isInternalStudyBachelor(article));
-        BufferedWriter writer = null;
-        if (isWritingToMarkDown && file != null)
-        {
-            writer = new BufferedWriter(new FileWriter(file.getPath()));
-            writer.write("# Summary\n");
-        }
-        logging(String.format("Bachelor articles: %d\n", articles.size()),
-                isWritingToMarkDown, writer);
+
+        System.out.printf("Bachelor articles(%s): %d",
+                          specCode,
+                          articles.size());
+        writeToMarkDown(String.format("Bachelor articles(%s): %d\n",
+                                      specCode,
+                                      articles.size()),
+                        writer);
+
         fillEnrolleesList(articles);
         var resultingTable = extractSpecTable(specCode);
+        writeToMarkDown("| # | id | Согласие | Баллы |\n", writer);
+        writeToMarkDown("|:---|---|:---:|---:|\n", writer);
+        for (var enrolleeData : resultingTable.entrySet())
+        {
+            Enrollee enrollee = enrolleeData.getValue();
+            int index = enrollee.indexAt(specCode);
+            String id = enrollee.id;
+            boolean hasAgreement = enrollee.hasAgreementTo() != null &&
+                    enrollee.hasAgreementTo().equals(specCode);
+            int points = enrollee.pointsSum;
+            String row = String.format("| %d | %s | %s | %d |\n",
+                                       index,
+                                       id,
+                                       hasAgreement ? "+" : "",
+                                       points);
+            writeToMarkDown(row, writer);
+        }
+        System.out.println("Done");
         if (writer != null)
         {
             writer.close();
         }
     }
 
-    private static void logging(String text,
-                                boolean isWritingToMarkDown,
-                                BufferedWriter writer)
+    private static void writeToMarkDown(String message, BufferedWriter writer)
     {
-        if (!isWritingToMarkDown)
+        try
         {
-            System.out.println(text);
+            writer.write(message);
         }
-        else
+        catch (IOException e)
         {
-            try
-            {
-                writer.write(text);
-            }
-            catch (IOException e)
-            {
-                System.out.println("Error occured");
-                System.out.println(e.getMessage());
-                System.out.println();
-                System.out.println(text);
-            }
+            System.out.println(e.getMessage());
         }
     }
 
