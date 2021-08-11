@@ -27,6 +27,7 @@ public class Solution
         articles.removeIf(article -> !isInternalStudyBachelor(article));
         System.out.printf("Bachelor articles: %d\n", articles.size());
         fillEnrolleesList(articles);
+        var resultingTable = extractSpecTable(specCode);
     }
 
     private static boolean isInternalStudyBachelor(Element article)
@@ -101,5 +102,25 @@ public class Solution
                 enrollees.put(id, newEnrollee);
             }
         });
+    }
+
+    private static Map<String, Enrollee> extractSpecTable(String specKey)
+    {
+        Map<String, Enrollee> result = new HashMap<>();
+        var enrolleesIds = enrollees.keySet();
+        for (var enrolleeId : enrolleesIds)
+        {
+            var enrollee = enrollees.get(enrolleeId);
+            if (enrollee.hasSentTo(specKey))
+            {
+                result.put(enrolleeId, enrollee);
+            }
+        }
+        result.entrySet().removeIf(enrollee -> {
+            if (enrollee.getValue().hasAgreementTo() == null) return false;
+            if (enrollee.getValue().hasAgreementTo().equals(specKey)) return false;
+            return true;
+        });
+        return result;
     }
 }
