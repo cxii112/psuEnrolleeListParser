@@ -3,12 +3,12 @@ import java.util.Map;
 
 public class Enrollee
 {
-    public final long id;
+    public final String id;
     public final int pointsSum;
 
     private Map<String, EnrolleeSpecData> specDataMap = new HashMap<>();
 
-    public Enrollee(long id, int pointsSum)
+    public Enrollee(String id, int pointsSum)
     {
         this.id = id;
         this.pointsSum = pointsSum;

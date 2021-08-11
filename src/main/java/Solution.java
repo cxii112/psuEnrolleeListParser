@@ -52,8 +52,17 @@ public class Solution
             Elements articleTables = article.getElementsByTag("table");
             String specCode = article.getElementsByTag("a").first()
                     .attr("name");
-            addEnrolleesFromTable(articleTables.first(), specCode + 'b');
-            addEnrolleesFromTable(articleTables.last(), specCode + 'p');
+            Elements h3s = article.getElementsByTag("h3");
+            h3s.forEach(h3 -> {
+                if (h3.text().toLowerCase().contains("бюджетные"))
+                {
+                    addEnrolleesFromTable(articleTables.first(), specCode + 'b');
+                }
+                else if (h3.text().toLowerCase().contains("договорам"))
+                {
+                    addEnrolleesFromTable(articleTables.last(), specCode + 'p');
+                }
+            });
         });
     }
 
@@ -68,20 +77,28 @@ public class Solution
         });
         rawRows.forEach(rawRow -> {
             Elements cols = rawRow.getElementsByTag("td");
-            Long id = Long.parseLong(cols.get(1).text());
-            int points = Integer.parseInt(cols.get(7).text());
+            String id = cols.get(1).text();
             int index = Integer.parseInt(cols.get(0).text());
             boolean hasAgreement = cols.get(3).ownText().contains("+");
-            if (enrollees.containsKey(id.toString()))
+            int points;
+            try
             {
-                Enrollee current = enrollees.get(id.toString());
+                points = Integer.parseInt(cols.get(7).text());
+            }
+            catch (Exception e)
+            {
+                points = 0;
+            }
+            if (enrollees.containsKey(id))
+            {
+                Enrollee current = enrollees.get(id);
                 current.addSpec(specKey, index, hasAgreement);
             }
             else
             {
                 Enrollee newEnrollee = new Enrollee(id, points);
                 newEnrollee.addSpec(specKey, index, hasAgreement);
-                enrollees.put(id.toString(), newEnrollee);
+                enrollees.put(id, newEnrollee);
             }
         });
     }
