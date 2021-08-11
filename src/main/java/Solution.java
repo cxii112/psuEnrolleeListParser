@@ -4,11 +4,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Solution
 {
-    private static ArrayList<Enrollee> enrollees = new ArrayList<>();
+    private static Map<String, Enrollee> enrollees = new HashMap<>();
 
     public static void main(String[] args) throws IOException
     {
@@ -17,11 +18,11 @@ public class Solution
             System.out.println(str);
         }
         String listUrl = args[0];
-//        if (listUrl.charAt(listUrl.length() - 1) != '/')
-//            listUrl += '/';
-//        listUrl += "#380402-07-12";
         String specCode = args[1] + 'b';
-        Document DOM = Jsoup.connect(listUrl).get();
+
+        Document DOM = Jsoup.connect(listUrl)
+                .maxBodySize(0)
+                .get();
         Elements articles = DOM.getElementsByTag("article");
         articles.removeIf(article -> !isInternalStudyBachelor(article));
         System.out.printf("Bachelor articles: %d\n", articles.size());
@@ -64,6 +65,24 @@ public class Solution
             var col = row.getElementsByTag("td").first();
             if (col.attr("colspan").equals("8")) return true;
             return false;
+        });
+        rawRows.forEach(rawRow -> {
+            Elements cols = rawRow.getElementsByTag("td");
+            Long id = Long.parseLong(cols.get(1).text());
+            int points = Integer.parseInt(cols.get(7).text());
+            int index = Integer.parseInt(cols.get(0).text());
+            boolean hasAgreement = cols.get(3).ownText().contains("+");
+            if (enrollees.containsKey(id.toString()))
+            {
+                Enrollee current = enrollees.get(id.toString());
+                current.addSpec(specKey, index, hasAgreement);
+            }
+            else
+            {
+                Enrollee newEnrollee = new Enrollee(id, points);
+                newEnrollee.addSpec(specKey, index, hasAgreement);
+                enrollees.put(id.toString(), newEnrollee);
+            }
         });
     }
 }
