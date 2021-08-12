@@ -99,8 +99,6 @@ public class Solution
                                    Map<String, Enrollee> table)
     {
         ArrayList<Enrollee> enrolleesArray = new ArrayList<>(table.values());
-        writeToMarkDown("| # | id | Согласие | Баллы |\n", writer);
-        writeToMarkDown("|:---|---|:---:|---:|\n", writer);
         Collections.sort(enrolleesArray,
                          new Comparator<Enrollee>()
                          {
@@ -109,6 +107,11 @@ public class Solution
                                  return o1.compare(o2, specCode);
                              }
                          });
+
+        writeToMarkDown("## Претенденты на текущую специальность\n\n",
+                        writer);
+        writeToMarkDown("| # | id | Согласие | Баллы |\n", writer);
+        writeToMarkDown("|:---|---|:---:|---:|\n", writer);
         enrolleesArray.forEach(enrollee -> {
             int index = enrollee.indexAt(specCode);
             String id = enrollee.id;
@@ -122,6 +125,26 @@ public class Solution
                                        points);
             writeToMarkDown(row, writer);
         });
+        writeToMarkDown("\n", writer);
+
+        writeToMarkDown("## Абитуриенты с согласиями\n\n",
+                        writer);
+        writeToMarkDown("| # | id | Баллы |\n", writer);
+        writeToMarkDown("|:---|---|---:|\n", writer);
+        enrolleesArray.forEach(enrollee -> {
+            boolean hasAgreement = enrollee.hasAgreementTo() != null &&
+                    enrollee.hasAgreementTo().equals(specCode);
+            if (!hasAgreement) return;
+            int index = enrollee.indexAt(specCode);
+            String id = enrollee.id;
+            int points = enrollee.pointsSum;
+            String row = String.format("| %d | %s | %d |\n",
+                                       index,
+                                       id,
+                                       points);
+            writeToMarkDown(row, writer);
+        });
+        writeToMarkDown("\n", writer);
     }
 
     private static void writeToMarkDown(String message, BufferedWriter writer)
